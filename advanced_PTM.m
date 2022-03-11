@@ -19,16 +19,16 @@ function [particle, fluid_u] = advanced_PTM(Flow, Particle, Model)
 %    at each timestep
 %    fluid_u - Local fluid velocity at the particle location
 %
-% Other m-files required: none
+% Other m-files required: nearest_index
 % Subfunctions: none
 % MAT-files required: none
 %
-% See also:
+% See also: run_lab_ptm, run_model_ptm
 % Author: Sam Hartharn-Evans
 % School of Mathematics, Statistics and Physics, Newcastle University
 % email address: s.hartharn-evans2@newcastle.ac.uk
 % GitHub: https://github.com/HartharnSam
-% 19-Jan-2022; Last revision: 19-Jan-2022
+% 19-Jan-2022; Last revision: 11-Mar-2022
 % MATLAB Version: 9.10.0.1602886 (R2021a)
 
 %---------------------------------------------------

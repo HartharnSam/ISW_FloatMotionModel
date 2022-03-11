@@ -11,7 +11,7 @@ p = dfdread(filename);
 xexp = nan(length(1:1500), length(tracked_particles));
 for i = 1:1500
     for j = 1:length(tracked_particles)
-        particle = tracked_particles(j)
+        particle = tracked_particles(j);
         try
             xexp(i, j) = p.Data{i}(particle, 1);
         end

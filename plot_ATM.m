@@ -106,3 +106,16 @@ delete cbar
 fig = gcf; 
 fig.Position(4) = fig.Position(3);
 exportgraphics(gcf, 'D:\OneDrive - Newcastle University\02_PhD_Project\04_Ice_Covered_Waters\06_Communication\BAMC\ParticleTracks_thumb.png')
+
+
+
+%%
+%%
+[particle_t, particle_x, particle_u, u, x] = advanced_PTM(TypeParameter, C_d, rho_f, x_start_loc, isPlot, u_0);
+pcolor(particle_t, x, u); shading flat; caxis([-.1 .1]);
+newbluewhitered;
+% colorbar;
+hold on
+plot(particle_t, particle_x);
+
+plot_ptv_tracks('x', '030222');
