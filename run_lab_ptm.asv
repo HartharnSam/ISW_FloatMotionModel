@@ -8,8 +8,7 @@
 clc; clearvars; close all; digiflowstartup;
 filename = {'./CamA/piv_ts.dfi', './CamB/piv_ts.dfi'};
 isFillMissing = false; 
-t_start = 2; 
-
+ 
 if size(filename, 2)==1 %% Just be nice and load in one set of data
     im = dfireadvel(filename{1});
     u = im.cdata(:, :, 1);
@@ -42,9 +41,9 @@ elseif size(filename, 2) == 2 %% Merge two timeseries
     new_2_data = interp2(grid_2.X, grid_2.Y, im2.cdata(:, :, 1), newX, newT);
     u = new_1_data;
     u(~isnan(new_2_data)) = new_2_data(~isnan(new_2_data));
-    u = u';
+    
     times = new_t';
-    x = new_x';
+    
 else
     error('Length of filename wrong')
 end
@@ -57,13 +56,3 @@ end
 time_index = nearest_index(times, t_start):length(times);
 times = times(time_index);
 u = u(:, time_index);
-
-Flow.U_flow = u;
-Flow.timestep = times(2)-times(1);
-Flow.x = x;
-
-Particle.StartLoc = 4.77;
-Particle.C_d = 17.77;
-Particle.rho_f = 910;
-
-[particle, fluid_u] = advanced_PTM(Flow, Particle, 'advanced');

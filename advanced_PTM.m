@@ -1,11 +1,11 @@
 function [particle, fluid_u] = advanced_PTM(Flow, Particle, Model)
-%ADVANCED_PTM - Model of particle motion using Lab or (SPINS) model input where:
+%ADVANCED_PTM - Model of particle motion using input flow data where:
 %   Force = 1/2 rho_0 U^2 A C_d - where C_d is drag coefficient, U is
 %   relative velocity, A is object area
 %   du_dt = F/m , so A/m = 1/rho_f
 % Inputs:
 %    Flow - Structure containing flow data. An (x by t) matrix of observed fluid flow
-%    (U_flow), Timestep, X_flow (a vector of x coordinates). Optionally
+%    (U_flow), timestep, x (a vector of x coordinates). Optionally
 %    rho_0 (upper layer density)
 %
 %    Particle - Structure containing particle data. A double or vector of x
@@ -35,15 +35,15 @@ function [particle, fluid_u] = advanced_PTM(Flow, Particle, Model)
 %% BEGIN CODE %%
 %---------------------------------------------------
 if isfield(Flow, 'rho_0')
-    rho_1 = rho_0;
+    rho_1 = Flow.rho_0;
 else
     rho_1 = 1029;
 end
 X = Flow.x;
 
-x_start_ind = nearest_index(X, Particle.StartX);
+x_start_ind = nearest_index(X, Particle.StartLoc);
 timestep = Flow.timestep;
-times = 0:timestep:size(Flow.U_flow, 2)-1;
+times = [0:size(Flow.U_flow, 2)-1]*timestep;
 u = Flow.U_flow;
 % Initialise all the variables
 n_particles = length(x_start_ind);
@@ -54,6 +54,7 @@ fluid_u = zeros(length(times),n_particles);
 
 % Set starting conditions
 particle_x(1, :) = X(x_start_ind, 1);
+
 for ii = 1:length(times)-1
     t = times(ii);
     fluid_u(ii, :) = interp1(X, u(:, ii), particle_x(ii, :));
@@ -65,12 +66,12 @@ for ii = 1:length(times)-1
             % Advanced particle tracking (velocity = past velocity + acceleration)
         case 'advanced'
             if ii == 1
-                if isfield('Particle', 'StartU')
+                if ~isfield('Particle', 'StartU')
                     particle_u(ii, :) = fluid_u(ii, :);% Initialise particles at local fluid velocity
                 else
-                    particle_u(ii, :) = u_0;
+                    particle_u(ii, :) = Particle.StartU;
                 end
-                particle_coef = (0.5*C_d*rho_1/rho_f);
+                particle_coef = (0.5*Particle.C_d*rho_1/Particle.rho_f);
             end
             
             particle_dudt(ii+1, :) = particle_coef.*((fluid_u(ii, :)-particle_u(ii, :)).^2).*sign(fluid_u(ii, :)); % Update particle velocity
