@@ -1,15 +1,38 @@
-if isPlot && strcmpi(TypeParameter.PlotType, 'animation')
-        if ii == 1
-            [xgrid, zgrid] = spinsgrid2d;
-            vid = VideoWriter('aPTM.mp4', 'MPEG-4');
-            vid.FrameRate = 1;
-            open(vid);
-            tlayout = tiledlayout(2, 1);
-            ax1 = nexttile;
-            ax2 = nexttile;
-            xinds = find(xgrid(:, 1) > xlimits(1) & xgrid(:, 1) < xlimits(2));
-            clims = [-1 1].*abs(max(u(:)));
-            
+function plot_ATM(flow, particle, u, PlotType, plotchars, DataType)
+% flow.x, flow.z, flow.t, u, particle
+% if model or lab
+% xlimits
+% output_fname
+xlimits = plotchars.xlimits;
+output_fname = plotchars.output_fname;
+if strcmp(DataType, 'model')
+    model = true;
+    lab = false;
+elseif strcmpi(DataType, 'lab')
+    lab = true;
+    model = false;
+end
+
+switch PlotType
+    case 'animation'
+        vid = VideoWriter('output_fname', 'MPEG-4');
+        vid.FrameRate = 1/(flow.t(2)-flow.t(1));
+        open(vid);
+        
+        tiledlayout(2, 1);
+        ax1 = nexttile;
+        ax2 = nexttile;
+        
+        xinds = find(flow.x(:, 1) > xlimits(1) & flow.x(:, 1) < xlimits(2));
+        clims = [-1 1].*abs(max(u(:)));
+        clrorder = custom_color_orders('set_colormap', 'Art', 'Juarez', size(particle, 2));
+        
+        if model
+            x = flow.x(xinds, :);
+            z = flow.z(xinds, :);
+        end
+        
+        if isfield('plotchars', 'wave_props') && plotchars.wave_props
             try
                 load wave_characteristics.mat wave_center wavelength_* time
             catch
@@ -21,101 +44,89 @@ if isPlot && strcmpi(TypeParameter.PlotType, 'animation')
             wavelength_right(wavelength_right == 0) = nan;
         end
         
-        temp_data = spins_reader_new('u', ii-1, xinds, []);
-        axes(ax1);
+        for ii = 1:length(flow.t)
+            time = flow.t(ii);
+            
+            if model
+                temp_data = spins_reader_new('u', time, xinds, []);
+            elseif lab
+                frm_fname = strrep('piv_####.dfi', '####', sprintf('%04d', time));
+                tmpim = dfireadvel(frm_fname);
+                temp_data = tmpim(xinds, :, 1);
+            end
+            
+            axes(ax1);
+            pcolor(ax1, flow.x(xinds, :), flow.x(xinds, :), temp_data);
+            shading flat
+            caxis(ax1, clims)
+            cmocean('balance');
+            hold(ax1, 'on');
+            plot(ax1, particle.x(ii, :), -.05, 'o', 'MarkerFaceColor', 'auto', 'MarkerSize', 8);
+            c = colorbar(ax1);
+            ylabel(c, 'u (m/s)')
+            xlim(xlimits)
+            hold off;
+            
+            axes(ax2);
+            pcolor(ax2, flow.x, flow.t([1 1:ii]), u(:, [1 1:ii])');
+            hold(ax2, 'on');
+            shading flat
+            caxis(ax2, clims);
+            cmocean('balance');
+            
+            if isfield('plotchars', 'wave_props') && plotchars.wave_props
+                plot(ax2, wave_center(1:ii), time(1:ii), 'k:');
+                plot(ax2, wave_center(1:ii) + wavelength_right(1:ii), time(1:ii),'k--')
+                plot(ax2, wave_center(1:ii) - wavelength_left(1:ii), time(1:ii), 'k--');
+            end
+            c = colorbar(ax2);
+            ylabel(c, 'u');
+            
+            custom_color_orders('set_colormap', 'Art', 'Juarez', length(x_start_ind));
+            plot(ax2, particle.x(1:ii, :), flow.t(1:ii), '-');
+            xlim(ax2, xlimits)
+            ylim(ax2, [flow.t(1) flow.t(end)]);
+            hold off;
+            
+            %dark_figure(gcf, [23 23 23]);
+            figure_print_format(gcf);
+            
+            F = getframe(gcf);
+            writeVideo(vid, F);
+        end
+        close(vid);
         
-        pcolor(ax1, xgrid(xinds, :), zgrid(xinds, :), temp_data);
+        %%
+    case 'ParticleHovmoller'
+        fig = figure;
+        pcolor(flow.x, flow.t([1 1:ii]), u(:, [1 1:ii])');
+        hold('on');
         shading flat
-        caxis(ax1, clims)
+        caxis(clims);
         cmocean('balance');
-        clrorder = custom_color_orders('set_colormap', 'Art', 'Juarez', length(x_start_ind));
-        hold on
-        plot(particle_x(ii, :), z_coord, 'o', 'MarkerFaceColor', 'auto', 'MarkerSize', 8);
-        c = colorbar;
-        ylabel(c, 'u')
-        xlim(xlimits)
-        hold off;
         
-        axes(ax2);
-        pcolor(X, times([1 1:ii]), u(:, [1 1:ii])');
-        hold on
-        shading flat
-        caxis(clims)
-        cmocean('balance')
-        plot(wave_center(1:ii), time(1:ii), 'k:');
-        plot(wave_center(1:ii) + wavelength_right(1:ii), time(1:ii),'k--')
-        plot(wave_center(1:ii) - wavelength_left(1:ii), time(1:ii), 'k--');
+        if wave_props
+            plot( wave_center(1:ii), time(1:ii), 'k:');
+            plot( wave_center(1:ii) + wavelength_right(1:ii), time(1:ii),'k--')
+            plot( wave_center(1:ii) - wavelength_left(1:ii), time(1:ii), 'k--');
+        end
         c = colorbar;
+        ylabel(c, 'u');
+        
         custom_color_orders('set_colormap', 'Art', 'Juarez', length(x_start_ind));
-        plot(particle_x(1:ii, :), times(1:ii), '-');
-        
-        ylabel(c, 'u')
-        xlim(xlimits)
-        ylim([0 length(times)-1]);
+        plot( particle.x(1:ii, :), flow.t(1:ii), '-');
+        xlim( xlimits)
+        ylim([flow.t(1) flow.t(end)]);
         hold off;
+        set(gca, 'XDir', 'reverse');
         
-        dark_figure(gcf, [23 23 23]);
+        %dark_figure(gcf, [23 23 23]);
         figure_print_format(gcf);
+        exportgraphics(gcf, output_fname);
+    otherwise
+        error('Unknown plot type')
         
-        F = getframe(gcf);
-        writeVideo(vid, F);
-end
-    
-
-if isPlot && strcmpi(TypeParameter.PlotType, 'animation')
-    close(vid);
-end
-if isPlot
-    figure
-    pcolor(X, time', u'); shading flat;
-    caxis([-.1 .1]);
-    newbluewhitered;
-    %axis tight
-    
-    set(gca, 'XDir', 'reverse');
-    
-    %     plot(particle_x, particle_t, 'b-');
-    %     plot(basic_particle_x, particle_t, 'r-');
-    %
-    %
-    %     figure
-    %     subaxis(2, 1, 1)
-    %     plot(particle_t, particle_x, 'k-');
-    %     hold on
-    %     plot(particle_t, basic_particle_x, 'b-');
-    %     subaxis(2, 1, 2)
-    %     plot(particle_t, particle_u);
-    %     hold on
-    %     plot(particle_t, u_t);
 end
 
 
-pcolor(x, [0:65], u(:, 1:66)'); shading flat; caxis([-.1 .1]); newbluewhitered; cbar = colorbar
-hold on;
-plot(particle_x, particle_t, 'k-')
-xlim([4 6]); ylim([30 60])
 
-exportgraphics(gcf, 'D:\OneDrive - Newcastle University\02_PhD_Project\04_Ice_Covered_Waters\06_Communication\BAMC\ParticleTracks.png')
-
-ax = gca;
-ax.Position = [0 0 1 1];
-ax.XColor = 'none';
-ax.YColor = 'none';
-delete cbar
-
-fig = gcf; 
-fig.Position(4) = fig.Position(3);
-exportgraphics(gcf, 'D:\OneDrive - Newcastle University\02_PhD_Project\04_Ice_Covered_Waters\06_Communication\BAMC\ParticleTracks_thumb.png')
-
-
-
-%%
-%%
-[particle_t, particle_x, particle_u, u, x] = advanced_PTM(TypeParameter, C_d, rho_f, x_start_loc, isPlot, u_0);
-pcolor(particle_t, x, u); shading flat; caxis([-.1 .1]);
-newbluewhitered;
-% colorbar;
-hold on
-plot(particle_t, particle_x);
-
-plot_ptv_tracks('x', '030222');
