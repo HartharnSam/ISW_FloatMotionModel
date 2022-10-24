@@ -1,4 +1,5 @@
-function plot_ATM(flow, particle, u, PlotType, plotchars, DataType)
+function plot_FMM(flow, particle, u, PlotType, plotchars, DataType)
+%PLOT_FMM - plot something to do with the 
 % flow.x, flow.z, flow.t, u, particle
 % if model or lab
 % xlimits

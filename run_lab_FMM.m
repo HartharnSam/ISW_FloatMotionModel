@@ -1,4 +1,4 @@
-%%run_lab_PTM;
+%%run_lab_FMM;
 %u = FitLabFlow(TypeParameter.lab_fname, 1);
 % makes some assumptions about the input piv_ts:
 %   Start at same time, and have the same timesteps
@@ -66,4 +66,4 @@ Particle.StartLoc = 4.77;
 Particle.C_d = 17.77;
 Particle.rho_f = 910;
 
-[particle, fluid_u] = advanced_PTM(Flow, Particle, 'advanced');
+[particle, fluid_u] = FloatMotionModel(Flow, Particle, 'advanced');

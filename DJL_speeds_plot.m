@@ -87,7 +87,7 @@ LfLambdaList = [0.03 0.3 1];
     Particle.rho_f = 910;
     Particle.Shape = 'Rectangle';
 
-    [particle, fluid_u] = advanced_PTM(Flow, Particle, 'advanced');
+    [particle, fluid_u] = FloatMotionModel(Flow, Particle, 'advanced');
 
     %% Plot
     figure(1);

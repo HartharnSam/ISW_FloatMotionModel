@@ -32,9 +32,9 @@ t_end = nearest_index(times, 21.433);
 times = times(t_start:t_end);
 locations = locations(t_start:t_end);
 disp(num2str(locations(1)))
-coefs_1 = lsqcurvefit(@test_APTM, coefs_0, times, locations);
+coefs_1 = lsqcurvefit(@test_FMM, coefs_0, times, locations);
 
-[locations_fitted] = test_APTM(coefs_1, times);
+[locations_fitted] = test_FMM(coefs_1, times);
 fprintf('\n C_d =  %4.2f \n', coefs_1(1));
 
 %% Plot the data
@@ -64,7 +64,7 @@ wysiwyg;
 %export_fig(fig, '../../../06_Communication/BAMC/LabFittedParticles.png', '-dpng');
 
 
-function x = test_APTM(coefs_0, times)
+function x = test_FMM(coefs_0, times)
 filename = {'./CamA/piv_ts.dfi', './CamB/piv_ts.dfi'};
 t_start = times(1); 
 t_end = times(end);
@@ -119,7 +119,7 @@ Particle.StartLoc = 4.7925;
 Particle.C_d = coefs_0;
 Particle.rho_f = 910;
 
-[particle, ~] = advanced_PTM(Flow, Particle, 'advanced');
+[particle, ~] = FloatMotionModel(Flow, Particle, 'advanced');
 x = particle.x';
 
 end

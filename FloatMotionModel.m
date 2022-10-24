@@ -1,5 +1,5 @@
-function [particle, fluid_u] = advanced_PTM(Flow, Particle, Model)
-%ADVANCED_PTM - Model of particle motion using input flow data where:
+function [particle, fluid_u] = FloatMotionModel(Flow, Particle, Model)
+%FLOATMOTIONMODEL - Model of particle motion using input flow data where:
 %   Force = 1/2 rho_0 U^2 A C_d - where C_d is drag coefficient, U is
 %   relative velocity, A is object area
 %   du_dt = F/m , so A/m = 1/rho_f
@@ -28,7 +28,7 @@ function [particle, fluid_u] = advanced_PTM(Flow, Particle, Model)
 % School of Mathematics, Statistics and Physics, Newcastle University
 % email address: s.hartharn-evans2@newcastle.ac.uk
 % GitHub: https://github.com/HartharnSam
-% 19-Jan-2022; Last revision: 11-Mar-2022
+% 19-Jan-2022; Last revision: Nov-2022
 % MATLAB Version: 9.10.0.1602886 (R2021a)
 
 %---------------------------------------------------

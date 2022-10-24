@@ -1,4 +1,4 @@
-%%run_model_ptm
+%%run_model_FMM
 
 clc; clearvars; close all; spinsstartup;
 filename = {'./CamA/piv_ts.dfi', './CamB/piv_ts.dfi'};
@@ -23,4 +23,4 @@ Particle.StartLoc = 4.77;
 Particle.C_d = 17.77;
 Particle.rho_f = 910;
 
-[particle, fluid_u] = advanced_PTM(Flow, Particle, 'advanced');
+[particle, fluid_u] = FloatMotionModel(Flow, Particle, 'advanced');
