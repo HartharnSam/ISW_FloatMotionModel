@@ -1,4 +1,4 @@
-function [xCurrent,Resnorm,FVAL,EXITFLAG,OUTPUT,LAMBDA,JACOB, argsIn] = lsqcurvefit_ul(FUN,xCurrent,XDATA,YDATA, t_startends, LB,UB,varargin)
+function [xCurrent,Resnorm,FVAL,EXITFLAG,OUTPUT,LAMBDA,JACOB, argsIn] = lsqcurvefit_ul(FUN,xCurrent,XDATA,YDATA, function_args, LB,UB,varargin)
 %LSQCURVEFIT solves non-linear least squares problems.
 %   LSQCURVEFIT attempts to solve problems of the form:
 %   min  sum {(FUN(X,XDATA)-YDATA).^2}  where X, XDATA, YDATA and the
@@ -162,7 +162,6 @@ if nargin < 8
     end
 end
 
-
 % SHE CODE - Put the lines all together
 num_times = 0;
 for ii = 1:length(XDATA)
@@ -236,7 +235,7 @@ end
 xCurrent(:) = xstart; % reshape back to user shape before evaluation
 funfcn = funfcn_x_xdata; % initialize user functions funfcn, which depend only on x
 % Catch any error in user objective during initial evaluation only
-argsIn = struct('StartEnds', t_startends, 'StartEndInds', end_index);
+argsIn = struct('FunctionArgs', function_args, 'StartEndInds', end_index);
 
 switch funfcn_x_xdata{1}
     case 'fun'

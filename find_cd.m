@@ -5,7 +5,10 @@ clc; clearvars; close all; digiflowstartup;
 m_path = mpath;
 %cd(m_path);
 addpath(m_path);
-
+% First guess at times to start and end
+piv = dfireadvel('CamA/piv_ts.dfi');
+t_start = piv.yOriginWorld;
+t_end = piv.yOriginWorld + ((piv.ny-1)*piv.yWorldPerPixel);
 %% Get the lab Particle Data
 load('./CamC/ptv_tracks.mat', 'ptv'); % Load in the data
 im = dfireadvel('CamC/output_0000.dfi'); % Load in a frame to get WCS adjustment
