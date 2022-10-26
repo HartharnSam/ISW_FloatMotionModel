@@ -1,73 +1,104 @@
 %FIT_CD
-% Fit C_d 
+% Fit C_d
 clc; clearvars; close all; digiflowstartup;
 
 m_path = mpath;
-%cd(m_path);
 addpath(m_path);
+
 % First guess at times to start and end
 piv = dfireadvel('CamA/piv_ts.dfi');
 t_start = piv.yOriginWorld;
 t_end = piv.yOriginWorld + ((piv.ny-1)*piv.yWorldPerPixel);
+
 %% Get the lab Particle Data
-load('./CamC/ptv_tracks.mat', 'ptv'); % Load in the data
+load('./CamC/ptv_tracks_compiled.mat', 'ptv'); % Load in the data
 im = dfireadvel('CamC/output_0000.dfi'); % Load in a frame to get WCS adjustment
 Grid = dfi_grid_read(im);
-ii = 1;
 times = (0:ptv.n_timesteps-1)+1; % Time indices
+fin = 1;
 
-%TODO Collate the tracks as if one
-for i = 1:ptv.n_particles
-    if ~isempty(ptv.data{i})
-        locations_tmp = interp1([1 Grid.nx], (Grid.x), ptv.data{i}(:, 32));
-        locations_tmp = locations_tmp(~isnan(locations_tmp))'; % Remove nans
-        locations{ii} = locations_tmp;
-        times_all{ii} = times(~isnan(locations_tmp))/30;
+particles = find(~cellfun(@isempty, ptv.data));
+locations = cell(1, length(particles));
+times_all = locations;
+t_starts = NaN(1, length(particles));
+t_ends = t_starts; loc_starts = t_starts;
+long_tracks = false(1, length(particles));
 
-        %% Make first guess at least squares fit
-        coefs_0 = 10;%, 910, locations(1)]; % [C_d, rho_f, x_start];
-        t_starts(ii) = nearest_index(times_all{ii}, t_start);
-        t_ends(ii) = nearest_index(times_all{ii}, t_end);
-        times_all{ii} = times_all{ii}(t_starts(ii):t_ends(ii));
-        locations{ii} = locations{ii}(t_starts(ii):t_ends(ii));
-        loc_starts(ii) = locations{ii}(1);
-        ii = ii+1;
+for i = 1:length(particles)
+    j = particles(i);
+    locations_tmp = interp1([1 Grid.nx], (Grid.x), ptv.data{j}(:, 32));
+    locations{i} = locations_tmp(~isnan(locations_tmp))'; % Remove nans
+    times_all{i} = times(~isnan(locations_tmp))/30;
 
-    end
+    %% Make first guess at least squares fit
+    coefs_0 = 10;
+    t_starts(i) = nearest_index(times_all{i}, t_start);
+    t_ends(i) = nearest_index(times_all{i}, t_end);
+    times_all{i} = times_all{i}(t_starts(i):t_ends(i));
+    locations{i} = locations{i}(t_starts(i):t_ends(i));
+    loc_starts(i) = locations{i}(1);
+    long_tracks(i) = length(locations{i})>1;
+
+    figure(fin);
+    hold on
+    plot(times_all{i}, locations{i}, 'k-')
 end
+% Cut down tracks to length>1 tracks only
+times_all = times_all(long_tracks);
+locations = locations(long_tracks);
+t_starts = t_starts(long_tracks);
+t_ends = t_ends(long_tracks);
+loc_starts = loc_starts(long_tracks);
+fin = fin+1;
+
+%% Do Least Squares Fit to find drag coefficient
 function_args.tstarts = t_starts;
 function_args.t_ends = t_ends;
 function_args.StartLoc = loc_starts;
-[coefs_1,~,~,~,~,~,~, argsIn] = lsqcurvefit_ul(@test_FMM, coefs_0, times_all, locations, function_args); % TODO: Make it not the final point
+[coefs_1, R2,~,~,~,~,~, argsIn] = lsqcurvefit_ul(@test_FMM, coefs_0, times_all, locations, function_args);
+
 %%
 num_times = 0;
 for ii = 1:length(times_all)
     num_times = num_times+length(times_all{ii});
 end
 xdata = NaN(num_times, 1); ydata = xdata;
-end_index = 0;
+end_index = zeros(1, length(times_all)+1);
+
 for ii = 1:length(times_all)
     indexes = end_index(ii)+(1:length(times_all{ii}));
     end_index(ii+1) = indexes(end);
     xdata(indexes) = times_all{ii};
     ydata(indexes) = locations{ii};
 end
-times_2 = xdata; 
+times_2 = xdata;
 locations_2 = ydata;
-[locations_fitted] = test_FMM(coefs_1, times_2, argsIn);
+%[locations_fitted] = test_FMM(coefs_1, times_2, argsIn);
 fprintf('\n C_d =  %4.2f \n', coefs_1(1));
+
+%% Test the residuals for various coefs_1
+coefs_0 = [logspace(-2, 4,100)];
+R2 = coefs_0*NaN;
+
+parfor ii = 1:length(coefs_0)
+    locations_tmp = test_FMM(coefs_0(ii), times_2, argsIn);
+    R2(ii) = sum((locations_2-locations_tmp).^2);
+end
+clf;
+plot(coefs_0, R2, 'xk');
 
 %% Plot the data
 figure
+[locations_fitted] = test_FMM(coefs_1(end), times_2, argsIn);
 
 plot(locations_2, times_2, 'kx');  % Plot the lab data
 hold on
-plot(locations_fitted, times_2, 'b-')
+plot(locations_fitted, times_2, 'b.')
 
 % Make plot nice
 xlabel('x (m)');
 ylabel('t (s)');
-l = legend('Lab Measured', ['Fit : $C_d$:', num2str(coefs_1(1))]);
+l = legend('Lab Measured', ['Fit : $C_d$:', num2str(coefs_1(end))]);
 l.Interpreter = 'latex';
 ax = gca; ax.XDir = 'reverse';
 figure_print_format(gcf, 18);
@@ -89,6 +120,7 @@ function YDATA = test_FMM(coefs_0, times, argsIn)
 filename = {'./CamA/piv_ts.dfi', './CamB/piv_ts.dfi'};
 
 YDATA = times*NaN;
+
 for ii = 1:length(argsIn.StartEndInds)-1
     t_start = times(argsIn.StartEndInds(ii)+1);
     t_end = times(argsIn.StartEndInds(ii+1));
@@ -133,7 +165,7 @@ for ii = 1:length(argsIn.StartEndInds)-1
     end
 
     time_index = nearest_index(timedata, t_start):nearest_index(timedata, t_end);
-    timedata = timedata(time_index);
+    %timedata = timedata(time_index);
     u = u(:, time_index);
 
     Flow.U_flow = u;

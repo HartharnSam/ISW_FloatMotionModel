@@ -168,7 +168,8 @@ for ii = 1:length(XDATA)
     num_times = num_times+length(XDATA{ii});
 end
 xdata = NaN(num_times, 1); ydata = xdata;
-end_index = 0;
+
+end_index = zeros(1, length(XDATA)+1);
 for ii = 1:length(XDATA)
     indexes = end_index(ii)+(1:length(XDATA{ii}));
     end_index(ii+1) = indexes(end);

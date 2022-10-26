@@ -62,7 +62,7 @@ end
 particle_x(1, :) = X(x_start_ind, 1);
 dx = abs(X(2)-X(1));
 for ii = 1:length(times)-1
-    t = times(ii);
+    %t = times(ii);
     particle_xs = particle_x(ii,:)' + (-(Particle.r+dx/2):dx:(Particle.r+dx/2));
 
     fluid_us = interp1(X, u(:, ii), particle_xs);
@@ -88,16 +88,15 @@ for ii = 1:length(times)-1
             particle_x(ii+1, :) = particle_x(ii, :)+particle_u(ii+1, :)*timestep; % Update Particle time
     end
     % Do a CFL timestepping check:
-    CFL = particle_u(ii+1)*timestep/dx;
-    if CFL>1
-        warning(['CFL = ', num2str(CFL), ' >1 : Sort our a better timestep?'])
-        %break
-    end
+    %CFL = particle_u(ii+1)*timestep/dx;
+    %if CFL>1
+        %disp(['CFL = ', num2str(CFL), ' >1 : Sort our a better timestep?'])
+    %end
 end
 
 particle.u = particle_u;
 particle.x = particle_x;
-particle.dudt = particle_dudt;
+%particle.dudt = particle_dudt;
 
 
 end
