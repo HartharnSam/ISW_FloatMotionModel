@@ -96,7 +96,9 @@ end
 
 particle.u = particle_u;
 particle.x = particle_x;
-%particle.dudt = particle_dudt;
+if strcmp('Model', 'advanced')
+    particle.dudt = particle_dudt;
+end
 
 
 end

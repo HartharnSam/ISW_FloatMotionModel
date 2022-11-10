@@ -4,12 +4,15 @@
 clc; clearvars; close all;
 isRecalculateDJL = false;
 
-LfLambdaList = [0.01:0.01:.1]; %0.03 0.5 1
-LfLambdaList = [0.03 0.3 1];
+LfLambdaList = 1:0.1:1.5; %0.03 0.5 1
+%LfLambdaList = [0.03 0.3 1 .2163];
+LfLambdaList = [0.01 0.03 0.1 0.3 0.5 1 1.2 1.5 2 3];
+LfLambdaList = [.1523];
 
 for j = 1:length(LfLambdaList)
-LfLambdaList = [0.03 0.3 1];
-    LfLambda = LfLambdaList(j)
+
+LfLambdaList = [.1523];
+    LfLambda = LfLambdaList(j);
     if isRecalculateDJL
         L = 14; H = 0.3;
         A = 1e-4;
@@ -51,7 +54,11 @@ LfLambdaList = [0.03 0.3 1];
         save('../../02_Raw_data/DJL_Wave1', 'x', 'uwave', 'c', 'z', 'density', 'L', 'wavelength');
     else
         clearvars -except c uwave x z density L wavelength max_u_par LfLambda j isRecalculateDJL
-        load('../../02_Raw_data/DJL_Wave1');
+        %load('../../02_Raw_data/DJL_Wave1');
+        load('DJL')
+        c = DJL.WaveC;
+        uwave = DJL.u;
+
     end
     %%
     % Set up timestepping
@@ -80,14 +87,14 @@ LfLambdaList = [0.03 0.3 1];
     Flow.x = x';
     Flow.rho_0 = 1029;
 
-    Particle.r = LfLambda*wavelength*2;
+    Particle.r = LfLambda*wavelength/2;
 
-    Particle.StartLoc = wavelength + Particle.r; % Start the particle just outside the wave's reach
+    Particle.StartLoc = wavelength + Particle.r +.5; % Start the particle just outside the wave's reach
     Particle.C_d = 170;
     Particle.rho_f = 910;
     Particle.Shape = 'Rectangle';
 
-    [particle, fluid_u] = FloatMotionModel(Flow, Particle, 'advanced');
+    [particle, fluid_u] = FloatMotionModel(Flow, Particle, 'basic');
 
     %% Plot
     figure(1);
@@ -102,9 +109,11 @@ LfLambdaList = [0.03 0.3 1];
     subplot(3, 1, 2)
     plot(t, particle.u);
     ylabel('u')
-    subplot(3, 1, 3);
-    plot(t, particle.dudt);
-    ylabel('du_{}dt')
+    try
+        subplot(3, 1, 3);
+        plot(t, particle.dudt);
+        ylabel('du_{}dt')
+    end
     if mod(j, 1) == 0
         close all;
         %Figure 3
@@ -122,9 +131,11 @@ LfLambdaList = [0.03 0.3 1];
         plot(t, rear_u/c, '-r');
         plot(t, front_u/c, 'b');
         max_u = .5;
+        yline(0, '-','Color', [1 1 1]*.3);
         ylim([-max_u max_u])
-        xlim([0 80])
-        ylabel('$c_f/c_{isw}$', 'interpreter', 'latex')
+        xlim([0 35])
+        ylabel('$u/c_{isw}$', 'interpreter', 'latex')
+        xticklabels([])
         legend('Float', 'Front Fluid', 'Rear Fluid', 'Location', 'best');
         title(['$L_f/\lambda = $ ', num2str(LfLambda)], 'interpreter', 'latex')
 
@@ -134,17 +145,20 @@ LfLambdaList = [0.03 0.3 1];
         hold on
         plot(t, (particle.u - front_u')/c, '-b');
         ylim([-max_u max_u]);
-        xlim([0 80])
-        yline(0, '--k')
+        xlim([0 35])
+        yline(0, '-','Color', [1 1 1]*.3);
         ylabel('$u_f - u(x) / c_{isw}$', 'interpreter', 'latex')
         xlabel('t (s)')
-        xticklabels([])
 
         figure_print_format(gcf, 15)
         fig = gcf;
         fig.Position = [681 331 560 467];
-        exportgraphics(gcf,['../../04_Output/06_SurfaceFlow/FlowFloatModel_', num2str(LfLambda), '.eps'], 'ContentType', 'vector')
+%        exportgraphics(gcf,['../../04_Output/06_SurfaceFlow/BasicFlowFloatModel_', num2str(LfLambda), '.eps'], 'ContentType', 'vector')
+%        exportgraphics(gcf,['../../04_Output/06_SurfaceFlow/BasicFlowFloatModel_', num2str(LfLambda), '.png'])
+        %exportgraphics(gcf,['../../04_Output/06_SurfaceFlow/FloatModels/BasicFlowFloatModel_', num2str(LfLambda), '.eps'], 'ContentType', 'vector')
+        exportgraphics(gcf,['BasicFlowFloatModel_', num2str(LfLambda), '.png'])
     end
+    
 
     max_u_par(j) = (max(particle.u)/c);
 
