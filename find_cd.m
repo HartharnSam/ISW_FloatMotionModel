@@ -64,8 +64,8 @@ pause;
 function_args.tstarts = t_starts;
 function_args.t_ends = t_ends;
 function_args.StartLoc = loc_starts;
-function_args.Particle.Shape = 'rectangle';
-function_args.Particle.r =  .35/2;
+function_args.Particle.Shape = 'circle';
+function_args.Particle.r =  .15/2;
 
 [coefs_1, R2,~,~,~,~,~, argsIn] = lsqcurvefit_ul(@test_FMM, coefs_0, times_all, locations, function_args);
 
