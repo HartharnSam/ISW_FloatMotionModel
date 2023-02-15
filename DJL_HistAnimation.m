@@ -51,8 +51,6 @@ else
 end
 %%
 t1 = 0; t2 = 50;
-ti = 25;
-
 dt = 1;
 t = t1:dt:t2;
 % Set up a moving frame of reference for the DJL solution, set the starting
@@ -65,8 +63,6 @@ for ii = 1:length(t)
     u(:, ii) = interp1(x, uwave(end, :), x_cur(:, ii), 'linear', 'extrap');
 end
 
-partial_u = u;%(:, 1:1/dt:end);
-partial_t = t;%(1:1/dt:end);
 front_u = t*NaN;
 rear_u = t*NaN;
 %% Parse and run model
@@ -157,7 +153,7 @@ for ii = 1:length(t)
     %% Histogram
     axes(ax4);
     x_flt_locs = linspace(particle.x(ii)+Particle.r, particle.x(ii)-Particle.r, 100);
-    u_edges = [0:0.05:0.5]; u_mids = u_edges(1:end-1);
+    u_edges = 0:0.05:0.5; u_mids = u_edges(1:end-1);
 
     float_velocities = interp1(x, u(:, ii)/c, x_flt_locs);
     [N] = histcounts(float_velocities, u_edges, 'Normalization', 'probability');

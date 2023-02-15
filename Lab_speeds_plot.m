@@ -1,10 +1,12 @@
 clearvars; close all; clc;
 
 filename = {'CamA/piv_ts.dfi', 'CamB/piv_ts.dfi', 'CamC/piv_ts.dfi'};
-
 [u, x, timedata] = collate_piv_ts(filename);
-load('CamC/ptv_tracks_compiled.mat')
+load('CamA/ptv_tracks_compiled.mat')
 c = 0.107;
+fig = figure;
+fig.Units = 'centimeters';
+fig.Position = [5.7944 3.1485 13.9965 10.5040];
 
 particleR = .350/2;
 timedata = timedata(1:max(length(ptv.n_timesteps), length(timedata)));
@@ -19,8 +21,8 @@ end
 uA_sm = smooth(uA, 0.05);
 uB_sm = smooth(uB, 0.05);
 float_u = ptv.data{1}(1:max(length(ptv.n_timesteps), length(timedata)), 3);
-subaxis(2, 1, 1)
-
+tiledlayout(2, 1)
+nexttile;
 plot(timedata, uA/c, '-', 'Color',[1 0 0 .2]);
 hold on
 plot(timedata, uA_sm/c, '-', 'Color',[1 0 0]);
@@ -32,15 +34,15 @@ plot(timedata, float_u/c, 'k-')
 ylim([-0.5 .5]);
 yline(0, '-','Color', [1 1 1]*.3);
 ylabel('$u/c_{isw}$', 'interpreter', 'latex')
-legend('', ' Fluid', '', 'Point B Fluid', 'Float',  'Location', 'eastoutside');
+legend('', ' Fluid', '', 'Point B Fluid', 'Float',  'Location', 'east');
 xticklabels([])
 xlim([0 70])
-set(gca, 'Position', [0.1694 0.6098 0.5348 0.2757]);
+%set(gca, 'Position', [0.1694 0.6098 0.5348 0.2757]);
 
 %title(['$L_f/\lambda = $ ', num2str(LfLambda)], 'interpreter', 'latex')
 
 % Plot differences
-subaxis(2, 1, 2)
+nexttile;
 plot(timedata, (float_u-uA_sm)/c, '-', 'Color',[1 0 0]);
 hold on
 plot(timedata, (float_u-uB_sm)/c, '-', 'Color', [0 0 1]);
@@ -51,16 +53,16 @@ xlabel('t (s)')
 %xline([13 21 27 35 45 57 61], 'k')
 xlim([0 70])
 %xline([18 25], 'b')
-set(gca, 'Position', [0.1694 0.1941 0.5348 0.2757]);
+%set(gca, 'Position', [0.1694 0.1941 0.5348 0.2757]);
 
 figure_print_format(gcf, 18)
 fig = gcf;
-fig.Units = 'centimeters';
-fig.Position = [0 0 14 10.5];
+% fig.Units = 'centimeters';
+% fig.Position = [0 0 14 10.5];
 %        exportgraphics(gcf,['../../04_Output/06_SurfaceFlow/BasicFlowFloatModel_', num2str(LfLambda), '.eps'], 'ContentType', 'vector')
 %        exportgraphics(gcf,['../../04_Output/06_SurfaceFlow/BasicFlowFloatModel_', num2str(LfLambda), '.png'])
 %exportgraphics(gcf,['../../04_Output/06_SurfaceFlow/FloatModels/BasicFlowFloatModel_', num2str(LfLambda), '.eps'], 'ContentType', 'vector')
-dark_figure(gcf, [23 23 23])
+%dark_figure(gcf, [23 23 23])
 export_fig(gcf,['FloatFluidSpeeds', '.png'], '-dpng')
 
 

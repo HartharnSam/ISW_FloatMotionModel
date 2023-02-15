@@ -1,4 +1,4 @@
-%DJL_SPEEDS_PLOT - Plots the fluid speeds at point A and point B for a
+%LAB_PTM_SPEEDS_PLOT - Plots the fluid speeds at point A and point B for a
 %float moving with the fluid according to the FloatMotionModel
 %
 % Other m-files required: FloatMotionModel, cmocean, djles,
@@ -16,86 +16,67 @@
 
 digiflowstartup
 clc; clearvars; close all;
-isRecalculateDJL = false;
 makePlots = true;
-%LfLambdaList = logspace(-1.5229,0.7782, 20)';
-%LfLambdaList = [0.03 0.3 3];
-lambdas = logspace(-5, -3, 10);
-lambdas = 1.561;
-LfLambdaList = .35/lambdas;
-max_u_par = LfLambdaList*lambdas*NaN;
-list_wavelength = lambdas*NaN;
-list_amp = lambdas*NaN;
-list_c = lambdas*NaN;
-
-for i_lambda = 1:length(lambdas)
-
-    for j = 1:length(LfLambdaList)
-        LfLambda = LfLambdaList(j);
-        if isRecalculateDJL && j == 1
-            L = 14; H = 0.3;
-            A = lambdas(i_lambda);
-            verbose = 0; relax = 0.15;
-
-            % Specify the general density profile which takes d_d as a second parameter
-            a_d = 0.019/2;
-            z0_d = 0.07;
-
-            frho = @(z, d_d) 1-a_d*tanh((z+z0_d)/d_d);
-            frhoz = @(z, d_d) -(a_d/d_d)*sech((z+z0_d)/d_d).^2;
-
-            % The velocity profile (zero for this case) (m/s)
-            Ubg = @(z) 0*z; Ubgz = @(z) 0*z; Ubgzz = @(z) 0*z;
-
-            % Find solution
-            start_time = clock;
-
-            % Specify resolution and pycnocline parameter d_d
-            NXlist = [64    128 256 512 1024 2048];
-            NZlist = [32    64  128 256 256 512];
-            ddlist = [0.01  0.01 0.01 0.01  0.01 .01];
-            epsilonlist =[1e-4 1e-4 1e-4 1e-4 1e-4 1e-5];
-            for ddindex = 1:length(ddlist)
-                NX = NXlist(ddindex);
-                NZ = NZlist(ddindex);
-
-                d_d = ddlist(ddindex);
-
-                rho = @(z) frho(z, d_d);
-                rhoz = @(z) frhoz(z, d_d);
-                epsilon = epsilonlist(ddindex);
-                djles_refine_solution;
-            end
-            end_time = clock;
-
-            djles_diagnostics;
-            clearvars -except c uwave x z density L wavelength max_u_par LfLambda* j isRecalculateDJL  max_u_par makePlots lambdas wave_ampl list_* i_lambda
-            save('../../02_Raw_data/DJL_Wave_tmp', 'x', 'uwave', 'c', 'z', 'density', 'L', 'wavelength', 'wave_ampl');
-        else
-            clearvars -except c uwave x z density L wavelength max_u_par LfLambda* j isRecalculateDJL max_u_par makePlots lambdas list_* i_lambda
-            %load('../../02_Raw_data/DJL_Wave_tmp');
-            load('DJL')
-            c = DJL.WaveC;
-            uwave = DJL.u;
-            wave_ampl = -DJL.WaveAmp;
-            %c = .107;
-        end
+% Need to run for 090322, 141122, 141222
+c = 0.107;
+%LfLambda = %
         %%
         % Set up timestepping
-        t1 = 0; t2 = 100;
-        dt = 1/10;
-        tim = t1:dt:t2;
-        % Set up a moving frame of reference for the DJL solution, set the starting
-        % wave location as x=0
-        x_cur = x' - c*tim + L/2;
+filename = {'./CamA/piv_ts.dfi', './CamB/piv_ts.dfi'};
+isFillMissing = false; 
+t_start = 0; 
 
-        % Calculate a moving frame of reference u profiles
-        u = x_cur*NaN;
-        for ii = 1:length(tim)
-            u(:, ii) = interp1(x, uwave(end, :), x_cur(:, ii), 'linear', 'extrap');
-        end
-        partial_u = u;%(:, 1:1/dt:end);
-        partial_t = tim;%(1:1/dt:end);
+if size(filename, 2)==1 %% Just be nice and load in one set of data
+    im = dfireadvel(filename{1});
+    u = im.cdata(:, :, 1);
+    u(u == 0) = NaN; % Remove anomalous numbers
+    u = flip(u, 1)';
+    x = im.x;
+    x = x(1, :)';
+    times = flip(im.y(:, 1));
+
+elseif size(filename, 2) == 2 %% Merge two timeseries
+    im1 = dfireadvel(filename{1});
+    im2 = dfireadvel(filename{2});
+    grid_1 = dfi_grid_read(im1);
+    grid_2 = dfi_grid_read(im2);
+
+    cutoff = 8; % Amount to cut off the edges, which appears to be an effect on PIV images
+    im1.cdata(:, [1:cutoff end-cutoff:end], :) = NaN;
+    im2.cdata(:, [1:cutoff end-cutoff:end], :) = NaN;
+    
+    xmin= min(min(grid_1.x), min(grid_2.x));
+    xmax= max(max(grid_1.x), max(grid_2.x));
+    tmin= min(min(grid_1.y), min(grid_2.y));
+    tmax= max(max(grid_1.y), max(grid_2.y));
+    
+    new_x = xmax:grid_1.dx:xmin;
+    new_t = tmin:grid_1.dy:tmax;
+    [newX, newT] = meshgrid(new_x, new_t);
+
+    new_1_data = interp2(grid_1.X, grid_1.Y, im1.cdata(:, :, 1), newX, newT);
+    new_2_data = interp2(grid_2.X, grid_2.Y, im2.cdata(:, :, 1), newX, newT);
+    u = new_1_data;
+    u(~isnan(new_2_data)) = new_2_data(~isnan(new_2_data));
+    u = u';
+    times = new_t';
+    x = new_x';
+else
+    error('Length of filename wrong')
+end
+
+if isFillMissing
+    u = fillmissing(u, 'linear', 'EndValues', 'none')'; %Re-fill those values
+end
+
+%% Cut down to the requested timings
+time_index = nearest_index(times, t_start):length(times);
+times = times(time_index);
+u = u(:, time_index);
+
+Flow.U_flow = u;
+Flow.timestep = times(2)-times(1);
+Flow.x = x;
 
         %figure(1)
         %pcolor(x, partial_t, partial_u'); %and plot
@@ -104,16 +85,16 @@ for i_lambda = 1:length(lambdas)
 
         %% Parse and run model
         Flow.u_flow = u;
-        Flow.timestep = tim(2)-tim(1);
-        Flow.x = x';
+        Flow.timestep = times(2)-times(1);
+        Flow.x = x;
         Flow.rho_1 = 1029;
 
-        Particle.r = LfLambda*wavelength/2;
+        Particle.r = .1/2;
 
-        Particle.StartLoc = wavelength + Particle.r +.5; % Start the particle just outside the wave's reach
+        Particle.StartLoc = 4.2201; % Start the particle just outside the wave's reach
         Particle.C_d = 170;
         Particle.rho_f = 910;
-        Particle.Shape = 'Rectangle';
+        Particle.Shape = 'Circle';
 
         [particle, fluid_u] = FloatMotionModel(Flow, Particle, 'basic');
 
@@ -121,49 +102,48 @@ for i_lambda = 1:length(lambdas)
         if makePlots
             figure(1);
             hold on
-            plot(particle.x, tim);
+            plot(particle.x, times);
 
             % Figure 2
             figure(2);
             subplot(3, 1, 1)
-            plot(tim, particle.x);
+            plot(times, particle.x);
             ylabel('x')
             subplot(3, 1, 2)
-            plot(tim, particle.u);
+            plot(times, particle.u);
             ylabel('u')
             try
                 subplot(3, 1, 3);
-                plot(tim, particle.dudt);
+                plot(times, particle.dudt);
                 ylabel('du_{}dt')
             end
         end
-        if mod(j, 1) == 0
             if makePlots
                 close all;
                 %Figure 3
                 figure(3);
                 tiledlayout(2, 1)
                 nexttile
-                plot(tim, particle.u/c, 'k-');
+                plot(times, particle.u/c, 'k-');
                 hold on
             end
-            front_u = tim*NaN; rear_u = tim*NaN;
-            for i = 1:length(tim)
+            front_u = times*NaN; rear_u = times*NaN;
+            for i = 1:length(times)
                 front_ind = nearest_index(x, particle.x(i)+Particle.r);
                 rear_ind = nearest_index(x, particle.x(i)-Particle.r);
                 front_u(i) = u(front_ind, i);
                 rear_u(i) = u(rear_ind, i);
             end
             if makePlots
-                plot(tim, rear_u/c, '-r');
-                plot(tim, front_u/c, 'b');
+                plot(times, rear_u/c, '-r');
+                plot(times, front_u/c, 'b');
                 max_u = .6;
                 yline(0, '-','Color', [1 1 1]*.3);
                 ylim([-max_u max_u])
                 xlim([0 70])
                 ylabel('$u/c_{isw}$', 'interpreter', 'latex')
                 xticklabels([])
-                title(['$L_f/\lambda = $ ', num2str(LfLambda)], 'interpreter', 'latex')
+%                title(['$L_f/\lambda = $ ', num2str(LfLambda)], 'interpreter', 'latex')
                 hold on
                 %xline([6 11 20.5 31 37])
                 %legend('Float', 'Fluid A', 'Fluid B','', '', '', '', '', 'Location', 'eastoutside');
@@ -171,9 +151,9 @@ for i_lambda = 1:length(lambdas)
 
                 % Add on difference in velocity part
                 nexttile;
-                plot(tim, (particle.u-rear_u')/c, '-r');
+                plot(times, (particle.u-rear_u)/c, '-r');
                 hold on
-                plot(tim, (particle.u - front_u')/c, '-b');
+                plot(times, (particle.u - front_u)/c, '-b');
                 ylim([-max_u max_u]);
                 xlim([0 70])
                 yline(0, '-','Color', [1 1 1]*.3);
@@ -181,7 +161,7 @@ for i_lambda = 1:length(lambdas)
                 %xticklabels([])
 % 
 %                 nexttile
-%                 plot(tim, particle.x-particle.x(1), '-r');
+%                 plot(times, particle.x-particle.x(1), '-r');
 %                 xlim([0 70]); ylim([0 1]);
 %                 yline(0, '-', 'Color', [1 1 1]*.3);
 %                 ylabel('$x_f$','interpreter', 'latex');
@@ -200,7 +180,6 @@ for i_lambda = 1:length(lambdas)
             %export_fig(gcf,['BasicFlowFloatModel_', num2str(LfLambda), '.png'], '-dpng')
 
             %  exportgraphics(gcf,['BasicFlowFloatModel_', num2str(LfLambda), '.png'])
-        end
 
 
         max_u_par(j, i_lambda) = (max(particle.u)/c);
@@ -208,8 +187,6 @@ for i_lambda = 1:length(lambdas)
         list_amp(i_lambda) = -wave_ampl;
         list_c(i_lambda) = c;
         
-    end
-end
 
 max_uf_c.data = max_u_par;
 max_uf_c.lambda = list_wavelength;
