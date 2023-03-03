@@ -240,18 +240,18 @@ argsIn = struct('FunctionArgs', function_args, 'StartEndInds', end_index);
 
 switch funfcn_x_xdata{1}
     case 'fun'
-        try
+        %try
             initVals.F = feval(funfcn_x_xdata{3},xCurrent,XDATA,argsIn);
-        catch userFcn_ME
-            if (isa(funfcn_x_xdata{3},'function_handle'))
-                numberInput = nargin(funfcn_x_xdata{3});
-                assert(numberInput == 2, message('optimlib:lsqcurvefit:NotEnoughInputArg'));
-            end
-            optim_ME = MException('optimlib:lsqcurvefit:InvalidFUN', ...
-                getString(message('optimlib:lsqcurvefit:InvalidFUN')));
-            userFcn_ME = addCause(userFcn_ME,optim_ME);
-            rethrow(userFcn_ME)
-        end
+        %catch userFcn_ME
+%             if (isa(funfcn_x_xdata{3},'function_handle'))
+%                 numberInput = nargin(funfcn_x_xdata{3});
+%                 assert(numberInput == 2, message('optimlib:lsqcurvefit:NotEnoughInputArg'));
+%             end
+%             optim_ME = MException('optimlib:lsqcurvefit:InvalidFUN', ...
+%                 getString(message('optimlib:lsqcurvefit:InvalidFUN')));
+%             userFcn_ME = addCause(userFcn_ME,optim_ME);
+%             rethrow(userFcn_ME)
+%         end
         initVals.J = [];
         funfcn{3} = @objective;
     case 'fungrad'

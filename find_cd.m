@@ -1,5 +1,7 @@
 %FIT_CD
-% Fit C_d
+% Fit C_d finds least squares best fitting drag coefficient to observed
+% particle tracks
+
 clc; clearvars; close all; digiflowstartup;
 
 m_path = mpath;
@@ -11,8 +13,8 @@ t_start = piv.yOriginWorld;
 t_end = piv.yOriginWorld + ((piv.ny-1)*piv.yWorldPerPixel);
 
 %% Get the lab Particle Data
-load('./CamC/ptv_tracks_compiled.mat', 'ptv'); % Load in the data
-im = dfireadvel('CamC/output_0000.dfi'); % Load in a frame to get WCS adjustment
+load('./CamA/ptv_tracks_compiled.mat', 'ptv'); % Load in the data
+im = dfireadvel('CamA/output_0000.dfi'); % Load in a frame to get WCS adjustment
 Grid = dfi_grid_read(im);
 times = (0:ptv.n_timesteps-1)+1; % Time indices
 fin = 1;
@@ -26,7 +28,13 @@ long_tracks = false(1, length(particles));
 
 for i = 1:length(particles)
     j = particles(i);
-    locations_tmp = interp1([1 Grid.nx], (Grid.x), ptv.data{j}(:, 32));
+    try
+        locations_tmp = interp1([1 Grid.nx], (Grid.x), ptv.data{j}(:, 32));
+    catch
+        %locations_tmp = interp1([1 Grid.nx], (Grid.x), ptv.data{j}(:, 1));
+        warning('something');
+        locations_tmp = ptv.data{j}(:, 1);
+    end
     locations{i} = locations_tmp(~isnan(locations_tmp))'; % Remove nans
     times_all{i} = times(~isnan(locations_tmp))/30;
 
@@ -50,11 +58,15 @@ t_starts = t_starts(long_tracks);
 t_ends = t_ends(long_tracks);
 loc_starts = loc_starts(long_tracks);
 fin = fin+1;
+pause;
 
 %% Do Least Squares Fit to find drag coefficient
 function_args.tstarts = t_starts;
 function_args.t_ends = t_ends;
 function_args.StartLoc = loc_starts;
+function_args.Particle.Shape = 'circle';
+function_args.Particle.r =  .15/2;
+
 [coefs_1, R2,~,~,~,~,~, argsIn] = lsqcurvefit_ul(@test_FMM, coefs_0, times_all, locations, function_args);
 
 %%
@@ -86,7 +98,7 @@ parfor ii = 1:length(coefs_0)
 end
 clf;
 plot(coefs_0, R2, 'xk');
-
+ylabel('Residual Error'); xlabel('$C_d$', 'interpreter', 'latex')
 %% Plot the data
 figure
 [locations_fitted] = test_FMM(coefs_1(end), times_2, argsIn);
@@ -175,8 +187,8 @@ for ii = 1:length(argsIn.StartEndInds)-1
     Particle.StartLoc = argsIn.FunctionArgs.StartLoc(ii);
     Particle.C_d = coefs_0;
     Particle.rho_f = 910;
-    Particle.Shape = 'circle';
-    Particle.r = .150;
+    Particle.Shape = argsIn.FunctionArgs.Particle.Shape;
+    Particle.r = argsIn.FunctionArgs.Particle.r;
     [particle, ~] = FloatMotionModel(Flow, Particle, 'advanced');
     YDATA((argsIn.StartEndInds(ii)+1):argsIn.StartEndInds(ii+1)) = particle.x';
 
