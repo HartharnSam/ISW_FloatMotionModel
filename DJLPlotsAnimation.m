@@ -84,7 +84,7 @@ ax1 = nexttile;
 ax2 = nexttile;
 ax3 = nexttile;
 pDepth = -0.02;
-fig = gcf; 
+fig = gcf;
 fig.Units = 'centimeters';
 fig.Position = [0 0 16 11.5];
 %vid = VideoWriter('../../04_Output/06_SurfaceFlow/DJL_Animations.mp4', 'MPEG-4');
@@ -147,7 +147,7 @@ for ii = 1:length(t)
     hold off
     pause(.1)
     figure_print_format(gcf, 18);
-dark_figure(gcf, [23 23 23])
+    dark_figure(gcf, [23 23 23])
     F = getframe(gcf);
     writeVideo(vid, F);
     completion(ii-t1, t2-t1);
