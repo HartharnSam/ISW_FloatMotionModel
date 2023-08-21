@@ -1,4 +1,5 @@
-% DJLPlotsAnimation - Produces an animation of the DJL Speed Plots function
+% DJLPlotsAnimation - Produces an animated Histogram representing the model for DJL
+
 
 clc; clearvars; close all;
 LfLambda = 2.4/1.4712;

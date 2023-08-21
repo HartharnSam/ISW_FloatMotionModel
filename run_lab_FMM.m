@@ -1,4 +1,4 @@
-%%run_lab_FMM;
+%%run_lab_FMM - Parsing Script for lab Data into the FMM
 %u = FitLabFlow(TypeParameter.lab_fname, 1);
 % makes some assumptions about the input piv_ts:
 %   Start at same time, and have the same timesteps

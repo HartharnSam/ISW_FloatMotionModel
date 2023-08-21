@@ -2,3 +2,6 @@
 *.asv
 *.mat
 Lamb1997.m
+lsqcurvefit_*
+find_cd*
+./extras

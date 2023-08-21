@@ -1,7 +1,7 @@
-%%run_model_FMM
+%%run_model_FMM - Parsing Script for SPINS model data into the FMM
 
-clc; clearvars; close all; spinsstartup;
-filename = {'./CamA/piv_ts.dfi', './CamB/piv_ts.dfi'};
+clc; clearvars; close all; 
+spinsstartup;
 t_start = 2; 
 
 % Read in SPINS stuff
